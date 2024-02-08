@@ -7,59 +7,78 @@
 #include <vector>
 #include "User.h"
 #include "Auth.h"
+#include <limits>
 
-class App {
-	User** users;
-	Auth* auth;
-	size_t num_users{ 0 };
+class App
+{
+	User **users{nullptr};
+	Auth *auth{nullptr};
+	size_t num_users{0};
 
-	void loadUsers(const char* fileName) {
+	void loadUsers(const char *fileName)
+	{
+		deallocate();
 		std::ifstream ifs(fileName);
 		std::string line;
-		while (std::getline(ifs, line)) {
+		while (std::getline(ifs, line))
+		{
 			num_users++;
 		}
 
 		ifs.close();
 		ifs.open(fileName);
-		users = new User * [num_users + 1];
-		for (size_t i = 0; i < num_users; i++) {
+		users = new User *[num_users + 1];
+		for (size_t i = 0; i < num_users; i++)
+		{
 			users[i] = nullptr;
 		}
 		std::vector<std::string> row;
 		std::string word, temp;
 		size_t cnt = 0;
-		while (ifs) {
+		while (ifs)
+		{
 			row.clear();
 			std::getline(ifs, line);
 			std::stringstream s(line);
-			while (std::getline(s, word, ',')) {
+			while (std::getline(s, word, ','))
+			{
 				row.push_back(word);
 			}
-			users[cnt] = new User(row[0], row[1], row[2], row[3]);
+			if (row.size() > 0)
+				users[cnt] = new User(row[0], row[1], row[2], row[3]);
 			cnt++;
 		}
-		delete auth;
-		auth = nullptr;
 		auth = new Auth(users, num_users);
 	}
 
-public:
-	App(const char* fileName) {
-		loadUsers(fileName);
-	}
-
-	~App() {
+	void deallocate()
+	{
 		delete auth;
-		for (size_t i = 0; i < num_users; i++) {
+		auth = nullptr;
+		for (size_t i = 0; i < num_users; i++)
+		{
 			delete users[i];
 		}
 		delete[] users;
+		users = nullptr;
 	}
 
-	void run() const {
+public:
+	App(const char *fileName)
+	{
+		loadUsers(fileName);
+	}
+
+	~App()
+	{
+		deallocate();
+	}
+
+	void run()
+	{
 		int choice = -1;
-		do {
+		do
+		{
 			bool successInput = false;
 			std::cout << "Please enter a choice\n";
 			std::cout << "=====================\n";
@@ -67,26 +86,39 @@ public:
 			std::cout << "2. Register\n";
 			std::cout << "0. Exit\n";
 			std::cout << "=====================\n";
-			do {
+			do
+			{
 				std::cout << "> ";
 				std::cin >> choice;
-				if (std::cin) {
+				if (std::cin)
+				{
 					successInput = true;
 				}
-				else {
+				else
+				{
 					std::cout << "Invalid input, please try again\n";
 					std::cin.clear();
 					std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 				}
 			} while (!successInput);
 
-			switch (choice) {
+			switch (choice)
+			{
 			case 1:
 				std::cout << "You chose login\n";
 				auth->login() ? std::cout << "Login successful\n" : std::cout << "Login failed\n";
 				break;
 			case 2:
 				std::cout << "You chose Register\n";
+				if (auth->signup())
+				{
+					loadUsers("users.csv");
+					auth->login() ? std::cout << "Login successful\n" : std::cout << "Login failed\n";
+				}
+				else
+				{
+					std::cout << "Register Failed :(\n";
+				}
 				break;
 			case 0:
 				std::cout << "Exiting app..." << std::endl;
@@ -98,9 +130,10 @@ public:
 
 		} while (choice != 0);
 	}
-	size_t numUsers() const {
+	size_t numUsers() const
+	{
 		return num_users;
 	}
 };
 
-#endif //!APP_H
+#endif //! APP_H
